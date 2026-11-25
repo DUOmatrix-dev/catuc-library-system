@@ -1,0 +1,1 @@
+import { PrismaClient } from '@prisma/client';const db=new PrismaClient();async function main(){await db.sequence.upsert({where:{key:'accession'},create:{key:'accession',value:0},update:{}});console.log('LIBRIX database seed completed. Configure a secure administrator through the authentication module before production use.')}main().finally(()=>db.$disconnect());

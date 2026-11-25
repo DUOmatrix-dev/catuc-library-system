@@ -1,0 +1,16 @@
+generator client { provider = "prisma-client-js" }
+datasource db { provider = "postgresql" url = env("DATABASE_URL") }
+enum CopyStatus { AVAILABLE BORROWED RESERVED LOST DAMAGED IN_REPAIR ARCHIVED }
+enum MemberStatus { ACTIVE SUSPENDED EXPIRED GRADUATED }
+enum LoanStatus { ACTIVE COMPLETED CANCELLED }
+enum ReservationStatus { PENDING READY FULFILLED CANCELLED EXPIRED }
+enum FineStatus { UNPAID PARTIALLY_PAID PAID WAIVED }
+model Book { id String @id @default(cuid()) title String authors String isbn String? @unique category String? publisher String? edition String? publicationYear Int? language String? description String? coverUrl String? createdAt DateTime @default(now()) updatedAt DateTime @updatedAt copies BookCopy[] @@index([title]) @@index([authors]) }
+model BookCopy { id String @id @default(cuid()) bookId String accessionNo String @unique barcode String @unique status CopyStatus @default(AVAILABLE) condition String @default("GOOD") shelfLocation String? acquiredAt DateTime? createdAt DateTime @default(now()) book Book @relation(fields:[bookId],references:[id]) loanItems LoanItem[] @@index([status]) }
+model Member { id String @id @default(cuid()) membershipNo String @unique fullName String category String faculty String? department String? email String? phone String? status MemberStatus @default(ACTIVE) createdAt DateTime @default(now()) loans Loan[] reservations Reservation[] fines Fine[] @@index([fullName]) }
+model Loan { id String @id @default(cuid()) memberId String borrowedAt DateTime @default(now()) issuedBy String? notes String? member Member @relation(fields:[memberId],references:[id]) items LoanItem[] }
+model LoanItem { id String @id @default(cuid()) loanId String copyId String dueAt DateTime status LoanStatus @default(ACTIVE) returnedAt DateTime? conditionOnReturn String? loan Loan @relation(fields:[loanId],references:[id]) copy BookCopy @relation(fields:[copyId],references:[id]) @@index([copyId,status]) @@index([dueAt]) }
+model Reservation { id String @id @default(cuid()) memberId String bookId String status ReservationStatus @default(PENDING) queuePosition Int createdAt DateTime @default(now()) expiresAt DateTime? member Member @relation(fields:[memberId],references:[id]) @@index([bookId,status,queuePosition]) }
+model Fine { id String @id @default(cuid()) memberId String amount Int balance Int reason String status FineStatus @default(UNPAID) createdAt DateTime @default(now()) member Member @relation(fields:[memberId],references:[id]) payments Payment[] }
+model Payment { id String @id @default(cuid()) fineId String amount Int method String reference String? receivedBy String? createdAt DateTime @default(now()) fine Fine @relation(fields:[fineId],references:[id]) }
+model Sequence { key String @id value Int }
